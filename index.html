@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloader Dewa | Riksan Projects</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-2xl w-full">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600 mb-2">
+                TikTok Downloader
+            </h1>
+            <p class="text-slate-400">High-End Video Scraper by Riksan</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl glow">
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="tiktokUrl" placeholder="Tempel link TikTok di sini..." 
+                    class="flex-1 bg-slate-900/50 border border-slate-700 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white text-sm">
+                <button id="btnAction" class="bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 rounded-xl font-bold transition-all active:scale-95 shadow-lg">
+                    Ambil Video
+                </button>
+            </div>
+
+            <div id="loader" class="hidden mt-8 text-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500 mx-auto"></div>
+            </div>
+
+            <div id="result" class="hidden mt-10 space-y-6 pt-6 border-t border-slate-800 text-white">
+                <div class="flex gap-4 items-center">
+                    <img id="thumb" src="" class="w-24 h-24 rounded-lg object-cover border border-slate-700">
+                    <div>
+                        <h3 id="author" class="font-bold text-lg"></h3>
+                        <p id="desc" class="text-xs text-slate-400 line-clamp-2 mt-1"></p>
+                    </div>
+                </div>
+                <a id="downloadLink" href="#" target="_blank" class="block text-center bg-white text-slate-900 font-bold py-4 rounded-xl">
+                    Download Video
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
