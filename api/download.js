@@ -1,10 +1,6 @@
-// api/download.js
 export default async function handler(req, res) {
     const { url } = req.query;
-
-    if (!url) {
-        return res.status(400).json({ error: 'URL TikTok tidak boleh kosong!' });
-    }
+    if (!url) return res.status(400).json({ error: 'URL Kosong' });
 
     const options = {
         method: 'GET',
@@ -15,14 +11,15 @@ export default async function handler(req, res) {
     };
 
     try {
-        // Ambil data dari API
         const response = await fetch(`https://tiktok-api23.p.rapidapi.com/api/download/video?url=${encodeURIComponent(url)}`, options);
         const data = await response.json();
+        
+        // Log untuk intip di Vercel Dashboard jika error lagi
+        console.log("Respon API23:", data);
 
-        // Header Anti-Cache agar data selalu fresh
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Cache-Control', 'no-store');
         res.status(200).json(data);
     } catch (error) {
-        res.status(500).json({ error: 'Server Error', detail: error.message });
+        res.status(500).json({ error: 'Server Error' });
     }
 }
