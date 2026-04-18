@@ -8,45 +8,46 @@ btnAction.addEventListener('click', async () => {
     const rawUrl = tiktokInput.value.trim();
     
     if (!rawUrl) {
-        alert('Paste dulu link TikTok-nya, Bos!');
+        alert('Masukkan link TikTok-nya dulu, Bos!');
         return;
     }
 
-    // UI State: Loading
+    // Efek Loading: Tombol mati & Loader muncul
     btnAction.disabled = true;
-    btnAction.innerText = 'Memproses...';
+    btnAction.classList.add('opacity-50', 'cursor-not-allowed');
     loader.classList.remove('hidden');
     resultArea.classList.add('hidden');
 
     try {
+        // Ambil data dari proxy API kita di Vercel
         const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
         const result = await response.json();
 
-        // Cek struktur data dari tiktok-scraper7 (biasanya ada di result.data)
-        if (result && result.data) {
+        // Cek apakah data video ada (Struktur Scraper7: result.data)
+        if (result && result.data && result.data.play) {
             const video = result.data;
 
-            // Isi konten hasil
-            document.getElementById('thumb').src = video.cover || '';
-            document.getElementById('author').innerText = video.author?.nickname || 'TikTok User';
-            document.getElementById('desc').innerText = video.title || 'Tidak ada deskripsi';
+            // Masukkan data ke UI
+            document.getElementById('thumb').src = video.cover;
+            document.getElementById('author').innerText = "@" + (video.author?.unique_id || "TikTok User");
+            document.getElementById('desc').innerText = video.title || "Video Tanpa Judul";
             
-            // Link video tanpa watermark biasanya ada di properti 'play'
-            const downloadBtn = document.getElementById('downloadLink');
-            downloadBtn.href = video.play;
+            // Link Download (play = No Watermark)
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = video.play;
             
-            // Tampilkan hasil
+            // Tampilkan kartu hasil
             resultArea.classList.remove('hidden');
         } else {
-            alert('Gagal: Video tidak ditemukan atau link salah.');
+            alert('Gagal: Video tidak ditemukan. Pastikan link bukan video private.');
         }
     } catch (error) {
-        console.error('Frontend Error:', error);
-        alert('Terjadi kesalahan koneksi ke API Vercel.');
+        console.error('Error:', error);
+        alert('Terjadi kesalahan sistem. Cek koneksi Anda.');
     } finally {
-        // UI State: Reset
+        // Reset UI
         btnAction.disabled = false;
-        btnAction.innerText = 'Ambil Video';
+        btnAction.classList.remove('opacity-50', 'cursor-not-allowed');
         loader.classList.add('hidden');
     }
 });
