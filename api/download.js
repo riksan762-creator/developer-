@@ -1,14 +1,14 @@
 // api/download.js
 export default async function handler(req, res) {
-    // Hanya izinkan metode GET
+    // Hanya izinkan request GET
     if (req.method !== 'GET') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
+        return res.status(405).json({ message: 'Metode tidak diizinkan' });
     }
 
     const { url } = req.query;
 
     if (!url) {
-        return res.status(400).json({ message: 'URL TikTok wajib diisi!' });
+        return res.status(400).json({ message: 'URL TikTok tidak boleh kosong!' });
     }
 
     const options = {
@@ -20,22 +20,18 @@ export default async function handler(req, res) {
     };
 
     try {
-        // Menggunakan endpoint v1/download milik tiktok-scraper7
+        // Menuju endpoint download (BUKAN favorite)
         const response = await fetch(`https://tiktok-scraper7.p.rapidapi.com/v1/download?url=${encodeURIComponent(url)}`, options);
         
         if (!response.ok) {
-            throw new Error(`API Response Error: ${response.status}`);
+            return res.status(response.status).json({ message: 'API RapidAPI bermasalah' });
         }
 
-        const data = await response.json();
+        const result = await response.json();
         
-        // Kirim data ke frontend
-        return res.status(200).json(data);
+        // Kirim hasil mentah ke frontend
+        return res.status(200).json(result);
     } catch (error) {
-        console.error('Fetch Error:', error);
-        return res.status(500).json({ 
-            message: 'Gagal terhubung ke server API',
-            error: error.message 
-        });
+        return res.status(500).json({ message: 'Server Error', error: error.message });
     }
 }
