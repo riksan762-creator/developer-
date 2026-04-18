@@ -1,4 +1,3 @@
-// app.js
 const btnAction = document.getElementById('btnAction');
 const tiktokInput = document.getElementById('tiktokUrl');
 const loader = document.getElementById('loader');
@@ -8,51 +7,53 @@ btnAction.addEventListener('click', async () => {
     const rawUrl = tiktokInput.value.trim();
     
     if (!rawUrl) {
-        alert('Paste link-nya dulu, Bos!');
+        alert('Paste link TikTok-nya dulu, Bos!');
         return;
     }
 
-    // UI: Start Loading
+    // UI State
     btnAction.disabled = true;
-    btnAction.innerText = 'Tunggu bentar...';
+    btnAction.innerText = 'Sedang Mencari...';
     loader.classList.remove('hidden');
     resultArea.classList.add('hidden');
 
     try {
         const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
-        
-        // Cek apakah server (Vercel) merespon
-        if (!response.ok) {
-            throw new Error('Server Vercel error!');
-        }
-
         const result = await response.json();
-        console.log("Respon API:", result); // Lihat di F12 (Console)
 
-        // Penyesuaian struktur data untuk tiktok-api23
-        // Biasanya datanya ada di result.data atau langsung di result
-        const videoData = result.data || result;
+        console.log("Respon Full API:", result); // Cek di Console F12
 
-        if (videoData && (videoData.video_url || videoData.nowm_video_url)) {
-            // Update UI dengan data yang didapat
-            document.getElementById('thumb').src = videoData.cover || videoData.origin_cover || '';
-            document.getElementById('author').innerText = "@" + (videoData.author?.nickname || videoData.author || "User");
-            document.getElementById('desc').innerText = videoData.title || "TikTok Video";
+        // Mapping Data: tiktok-api23 biasanya membungkus dalam 'data'
+        // Kita ambil data terdalam jika ada, jika tidak pakai result itu sendiri
+        const v = result.data || result;
+
+        // Cari link video di berbagai kemungkinan nama properti (video_url atau nowm_video_url)
+        const videoLink = v.video_url || v.nowm_video_url || v.play || (v.video && v.video.play);
+        const videoCover = v.cover || v.origin_cover || (v.video && v.video.cover);
+        const videoAuthor = v.author?.nickname || v.author || "TikTok User";
+        const videoTitle = v.title || v.desc || "Video Berhasil Diambil";
+
+        if (videoLink) {
+            // Isi ke UI
+            document.getElementById('thumb').src = videoCover;
+            document.getElementById('author').innerText = "@" + videoAuthor;
+            document.getElementById('desc').innerText = videoTitle;
             
-            // Link Download
-            const finalLink = videoData.video_url || videoData.nowm_video_url;
-            document.getElementById('downloadLink').href = finalLink;
+            const dlBtn = document.getElementById('downloadLink');
+            dlBtn.href = videoLink;
             
-            // Munculkan hasil
+            // Tampilkan hasil
             resultArea.classList.remove('hidden');
         } else {
-            alert('Video tidak ditemukan. Cek apakah link-nya bener atau video-nya tidak diprivasi.');
+            // Jika link video tidak ditemukan sama sekali di dalam JSON
+            console.error("Link video tidak ditemukan dalam objek:", v);
+            alert('Gagal: API tidak memberikan link video. Cek kuota RapidAPI atau coba link lain.');
         }
+
     } catch (error) {
-        console.error('Error Detail:', error);
-        alert('Waduh, koneksi putus atau ada error di sistem. Cek F12!');
+        console.error('Fetch Error:', error);
+        alert('Terjadi kesalahan koneksi ke server.');
     } finally {
-        // UI: Reset
         btnAction.disabled = false;
         btnAction.innerText = 'Ambil Video';
         loader.classList.add('hidden');
