@@ -1,42 +1,52 @@
 // app.js
 const btnAction = document.getElementById('btnAction');
+const tiktokInput = document.getElementById('tiktokUrl');
 const loader = document.getElementById('loader');
-const result = document.getElementById('result');
+const resultArea = document.getElementById('result');
 
 btnAction.addEventListener('click', async () => {
-    const url = document.getElementById('tiktokUrl').value;
+    const rawUrl = tiktokInput.value.trim();
     
-    if (!url) {
-        alert('Masukkan URL TikTok dulu bos!');
+    if (!rawUrl) {
+        alert('Paste dulu link TikTok-nya, Bos!');
         return;
     }
 
-    // Reset UI
-    loader.classList.remove('hidden');
-    result.classList.add('hidden');
+    // UI State: Loading
     btnAction.disabled = true;
+    btnAction.innerText = 'Memproses...';
+    loader.classList.remove('hidden');
+    resultArea.classList.add('hidden');
 
     try {
-        // Memanggil internal API (Vercel Function)
-        const response = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
-        const data = await response.json();
+        const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
+        const result = await response.json();
 
-        if (data.status === "success" || data.data) {
-            const videoData = data.data;
-            document.getElementById('thumb').src = videoData.cover;
-            document.getElementById('author').innerText = "@" + (videoData.author.unique_id || "User");
-            document.getElementById('desc').innerText = videoData.title || "No description";
-            document.getElementById('downloadLink').href = videoData.play;
+        // Cek struktur data dari tiktok-scraper7 (biasanya ada di result.data)
+        if (result && result.data) {
+            const video = result.data;
 
-            result.classList.remove('hidden');
+            // Isi konten hasil
+            document.getElementById('thumb').src = video.cover || '';
+            document.getElementById('author').innerText = video.author?.nickname || 'TikTok User';
+            document.getElementById('desc').innerText = video.title || 'Tidak ada deskripsi';
+            
+            // Link video tanpa watermark biasanya ada di properti 'play'
+            const downloadBtn = document.getElementById('downloadLink');
+            downloadBtn.href = video.play;
+            
+            // Tampilkan hasil
+            resultArea.classList.remove('hidden');
         } else {
-            alert('Video tidak ditemukan atau API Limit!');
+            alert('Gagal: Video tidak ditemukan atau link salah.');
         }
     } catch (error) {
-        console.error(error);
-        alert('Terjadi kesalahan server.');
+        console.error('Frontend Error:', error);
+        alert('Terjadi kesalahan koneksi ke API Vercel.');
     } finally {
-        loader.classList.add('hidden');
+        // UI State: Reset
         btnAction.disabled = false;
+        btnAction.innerText = 'Ambil Video';
+        loader.classList.add('hidden');
     }
 });
