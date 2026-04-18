@@ -1,49 +1,56 @@
+// Deklarasi Elemen
 const btnAction = document.getElementById('btnAction');
 const tiktokInput = document.getElementById('tiktokUrl');
 const loader = document.getElementById('loader');
 const resultArea = document.getElementById('result');
 const downloadBtn = document.getElementById('downloadLink');
 
+// 1. Logika Ambil Data Video
 btnAction.addEventListener('click', async () => {
     const rawUrl = tiktokInput.value.trim();
-    if (!rawUrl) return alert('Paste linknya dulu!');
+    
+    if (!rawUrl) {
+        alert('Paste link TikTok-nya dulu, Bos!');
+        return;
+    }
 
+    // UI State: Loading
     btnAction.disabled = true;
-    btnAction.innerText = 'Mencari Video...';
+    btnAction.innerText = 'Sedang Memproses...';
     loader.classList.remove('hidden');
     resultArea.classList.add('hidden');
 
     try {
-        const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}&t=${Date.now()}`);
+        const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
         const result = await response.json();
 
-        // LOGIKA MAPPING TERKUAT:
-        // Cek di result.data (api23) atau langsung di result
-        const d = result.data || result;
+        // Mapping data tiktok-api23 (sesuai curl Anda)
+        const v = result.data || result;
 
-        // Cari video di segala kemungkinan nama property
-        const videoURL = d.video_url || d.nowm_video_url || d.play || d.download_url;
-        const coverURL = d.cover || d.origin_cover || d.thumbnail;
-        const authorName = d.author?.nickname || d.author || "TikTok User";
-        const videoTitle = d.title || d.desc || "Berhasil Diambil";
+        // Mencari link video dan thumbnail di berbagai properti
+        const videoLink = v.video_url || v.nowm_video_url || v.play;
+        const videoCover = v.cover || v.origin_cover || (v.video && v.video.cover);
+        const videoAuthor = v.author?.nickname || v.author || "TikTok User";
+        const videoTitle = v.title || v.desc || "Tanpa Judul";
 
-        if (videoURL) {
-            // Tampilkan Gambar
-            const thumbImg = document.getElementById('thumb');
-            thumbImg.src = coverURL;
-            
-            document.getElementById('author').innerText = "@" + authorName;
+        if (videoLink) {
+            // Tampilkan Thumbnail & Data (Jangan sampai hilang)
+            document.getElementById('thumb').src = videoCover;
+            document.getElementById('author').innerText = "@" + videoAuthor;
             document.getElementById('desc').innerText = videoTitle;
             
-            // Masukkan link ke tombol
-            downloadBtn.href = videoURL;
+            // Simpan link video ke atribut href tombol download
+            downloadBtn.href = videoLink;
+            
+            // Tampilkan Area Hasil
             resultArea.classList.remove('hidden');
         } else {
-            // Kalau masih gagal, kita munculkan pesan error dari API jika ada
-            alert('Gagal: ' + (result.msg || 'Struktur data API berubah / Video Private'));
+            alert('Gagal: API tidak memberikan link video. Coba link lain.');
         }
-    } catch (err) {
-        alert('Koneksi bermasalah!');
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan koneksi ke server.');
     } finally {
         btnAction.disabled = false;
         btnAction.innerText = 'Ambil Video';
@@ -51,27 +58,51 @@ btnAction.addEventListener('click', async () => {
     }
 });
 
-// Logika Download (Tetap Pakai Blob agar masuk galeri)
+// 2. Logika Paksa Download (Save to Gallery)
 downloadBtn.addEventListener('click', async (e) => {
+    // Kita gunakan teknik Fetch Blob agar browser mendownload, bukan memutar video
     e.preventDefault();
-    const url = downloadBtn.href;
-    if (!url || url === "#") return;
+    
+    const videoUrl = downloadBtn.href;
+    if (!videoUrl || videoUrl === "#") return;
 
+    const originalText = downloadBtn.innerText;
+    
     try {
         downloadBtn.innerText = "Mengunduh...";
-        const res = await fetch(url);
+        downloadBtn.classList.add('opacity-50');
+
+        // Mengambil data file video
+        const res = await fetch(videoUrl);
         const blob = await res.blob();
-        const bUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = bUrl;
-        a.download = `TikTok_Riksan_${Date.now()}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(bUrl);
-        alert("Selesai! Cek Galeri.");
-    } catch (e) {
-        window.open(url, '_blank');
+        
+        // Membuat URL sementara di browser
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        // Membuat elemen link download bayangan
+        const tempLink = document.createElement('a');
+        tempLink.style.display = 'none';
+        tempLink.href = blobUrl;
+        
+        // Nama file saat tersimpan di HP/PC
+        tempLink.download = `RiksanProjects_${Date.now()}.mp4`;
+        
+        document.body.appendChild(tempLink);
+        tempLink.click(); // Klik otomatis untuk download
+        
+        // Hapus elemen dan URL sementara
+        document.body.removeChild(tempLink);
+        window.URL.revokeObjectURL(blobUrl);
+        
+        alert("Video berhasil diunduh ke galeri!");
+        
+    } catch (err) {
+        console.error("Gagal paksa download:", err);
+        // Fallback: Jika gagal (karena masalah CORS), buka di tab baru agar user bisa 'Simpan Manual'
+        window.open(videoUrl, '_blank');
+        alert("Gagal mengunduh otomatis. Video dibuka di tab baru, silakan tahan video lalu pilih 'Simpan'.");
     } finally {
-        downloadBtn.innerText = "Download ke Galeri";
+        downloadBtn.innerText = originalText;
+        downloadBtn.classList.remove('opacity-50');
     }
 });
